@@ -12,3 +12,16 @@
 5:对于外壳DLL进行重定位，资源数据修复
 6:设置导出变量的数据，在外壳DLL中将使用到的变量
 7:写入文件
+
+
+
+原始区段信息
+![image](https://github.com/longqun/Packer/blob/master/ScreenShot/%E5%8E%9F%E5%A7%8B%E5%8C%BA%E6%AE%B5%E4%BF%A1%E6%81%AF.PNG?raw=true)
+原始目录
+![image](https://github.com/longqun/Packer/blob/master/ScreenShot/%E5%8E%9F%E5%A7%8B%E7%9B%AE%E5%BD%95%E8%A1%A8.PNG?raw=true)
+
+加壳后的区段信息
+![image](https://github.com/longqun/Packer/blob/master/ScreenShot/%E5%8A%A0%E5%A3%B3%E5%90%8E%E5%8C%BA%E6%AE%B5%E4%BF%A1%E6%81%AF.PNG?raw=true)
+
+加壳之后的目录表
+![image](https://github.com/longqun/Packer/blob/master/ScreenShot/%E5%8A%A0%E5%A3%B3%E4%B9%8B%E5%90%8E%E7%9A%84%E7%9B%AE%E5%BD%95%E8%A1%A8.PNG?raw=true)
