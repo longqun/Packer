@@ -42,4 +42,5 @@ public:
 	afx_msg void OnDropFiles(HDROP hDropInfo);
 	CEdit m_FileName;
 
+	afx_msg void OnBnClickedButton1();
 };

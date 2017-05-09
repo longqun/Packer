@@ -7,6 +7,11 @@
 bool CreateFileMapStruct(const  char*path,FileMapStruct & fileMapStruct)
 {
 	fileMapStruct.m_hFile = fopen(path,"rb+");
+	if (fileMapStruct.m_hFile == NULL)
+	{
+		MessageBoxA(NULL,"文件打开失败!","提示",MB_ICONERROR);
+		return false;
+	}
 	fseek(fileMapStruct.m_hFile,0,SEEK_END);
 	fileMapStruct.length = ftell(fileMapStruct.m_hFile);
 	fseek(fileMapStruct.m_hFile, 0, SEEK_SET);
@@ -39,7 +44,7 @@ bool isPEEXE32(const char *fileData)
 
 int __cdecl ProgressCallBack(unsigned int insize, unsigned int inpos, unsigned int outpos, void * cbparam)
 {
-	SendMessageA(g_hwnd, WM_UPDATE,inpos,insize);
+	//SendMessageA(g_hwnd, WM_UPDATE,inpos,insize);
 	return 1;
 }
 

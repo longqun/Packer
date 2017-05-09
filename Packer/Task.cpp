@@ -21,6 +21,10 @@ GlogalExternVar *g_GlobalExternVar;
 Task::Task(HWND  hwnd)
 {
 	m_hwnd= hwnd;
+	m_lpPressData = NULL;
+	m_TargetPeTag.m_FileMapTag.m_lpFileData = NULL;
+	m_PressPeTag.m_FileMapTag.m_lpFileData = NULL;
+	m_ShellPeTag.m_FileMapTag.m_lpFileData = NULL;
 }
 
 Task::~Task()
@@ -303,6 +307,7 @@ void Task::Init(const char *path)
 
 	StoreSectionInfo(m_TargetPeTag.m_FileMapTag.m_lpFileData, m_TargetSecVector);
 	StoreSectionInfo(m_ShellPeTag.m_FileMapTag.m_lpFileData, m_ShellSecVector);
+	Pack(path);
 }
 
 void Task::GetResRVA(char* lpFileData, DWORD& dwRVA, DWORD& dwSize)
@@ -587,7 +592,6 @@ void Task::Pack(const std::string &path)
 	std::string sFileName = path.substr(0, path.length() - 4);
 	sFileName += "_Pack.exe";
 	SaveFile(sFileName.c_str());
-	MessageBoxW(NULL,L"¼Ó¿Ç³É¹¦",L"Packer",0);
 }
 
 void Task::SetGlobalVar(DWORD dwPressSize)

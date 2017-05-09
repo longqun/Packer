@@ -187,8 +187,9 @@
   <ItemGroup>
     <ClInclude Include="aplib.h" />
     <ClInclude Include="info.h" />
+    <ClInclude Include="LoadIng.h" />
     <ClInclude Include="Packer.h" />
-    <ClInclude Include="PackerDlg.h" />
+    <ClInclude Include="PictureEx.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -196,8 +197,10 @@
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="LoadIng.cpp" />
     <ClCompile Include="Packer.cpp" />
     <ClCompile Include="PackerDlg.cpp" />
+    <ClCompile Include="PictureEx.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -215,6 +218,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Packer.ico" />
+    <Image Include="res\timg.gif" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

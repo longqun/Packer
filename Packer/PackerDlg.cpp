@@ -11,6 +11,7 @@
 #include "aplib.h"
 #include "Task.h"
 #include "info.h"
+#include "Loading.h"
 #pragma comment(lib, "aplib.lib")
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -18,8 +19,8 @@
 #pragma warning(disable: 4996)
 
 extern HWND g_hwnd;
-std::string path;;
-bool isPacking = false;;
+std::string path;
+bool isPacking = false;
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
 class CAboutDlg : public CDialogEx
@@ -66,7 +67,6 @@ CPackerDlg::CPackerDlg(CWnd* pParent /*=NULL*/)
 void CPackerDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_PROGRESS1, m_progress);
 	DDX_Control(pDX, IDC_FILENAME, m_FileName);
 }
 
@@ -79,21 +79,11 @@ BEGIN_MESSAGE_MAP(CPackerDlg, CDialogEx)
 	ON_MESSAGE(WM_UPDATEWRITEMEMORY, &CPackerDlg::OnUpdateWriteMemoryProgress)
 	ON_BN_CLICKED(IDOK, &CPackerDlg::OnBnClickedOk)
 	ON_WM_DROPFILES()
+	ON_BN_CLICKED(IDC_BUTTON1, &CPackerDlg::OnBnClickedButton1)
 END_MESSAGE_MAP()
 
 
 // CPackerDlg 消息处理程序
-void ThreadFunc1(void *arglist)
-{
-
-	Task *task = new Task(g_hwnd);
-	replaceStringA(path);
-	task->Init(path.c_str());
-	task->Pack(path);
-	isPacking = false;
-	delete task;
-	_endthread();
-}
 BOOL CPackerDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -206,7 +196,8 @@ void CPackerDlg::OnBnClickedOk()
 		MessageBoxA("正在加壳中请等候", "Packer", MB_ICONWARNING);
 		return;
 	}
-	_beginthread(ThreadFunc1, NULL, NULL);
+	LoadIng load;
+	load.DoModal();
 }
 
 
@@ -234,4 +225,26 @@ void CPackerDlg::OnDropFiles(HDROP hDropInfo)
 	SetDlgItemTextA(IDC_FILENAME,wsStr);
 	path = wsStr;
 	CDialogEx::OnDropFiles(hDropInfo);
+}
+
+
+void CPackerDlg::OnBnClickedButton1()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	TCHAR szFilter[] = _T("可执行文件(*.exe)|*.exe|所有文件(*.*)|*.*||");
+	CFileDialog fileDialog(TRUE,_T("exe"),NULL,0,szFilter,this);
+	CString csFileName;
+	if (IDOK == fileDialog.DoModal())
+	{
+		csFileName = fileDialog.GetPathName();
+		std::string wsFileKind=csFileName.GetBuffer();
+		wsFileKind=wsFileKind.substr(wsFileKind.length() - 3, 3);
+		if (stricmp(wsFileKind.c_str(), "exe") != 0)
+		{
+			MessageBox("只支持EXE文件", "提示", 0);
+			return;
+		}
+		SetDlgItemTextA(IDC_FILENAME, csFileName.GetBuffer());
+		path = csFileName.GetBuffer();
+	}
 }

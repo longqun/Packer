@@ -21,9 +21,6 @@
     <ClInclude Include="Packer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="PackerDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -45,6 +42,12 @@
     <ClInclude Include="Task.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="PictureEx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LoadIng.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Packer.cpp">
@@ -62,6 +65,12 @@
     <ClCompile Include="Task.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="LoadIng.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PictureEx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Packer.rc">
@@ -75,6 +84,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Packer.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\timg.gif">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>
