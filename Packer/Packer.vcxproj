@@ -187,8 +187,10 @@
   <ItemGroup>
     <ClInclude Include="aplib.h" />
     <ClInclude Include="info.h" />
+    <ClInclude Include="InputInfo.h" />
     <ClInclude Include="LoadIng.h" />
     <ClInclude Include="Packer.h" />
+    <ClInclude Include="PackerDlg.h" />
     <ClInclude Include="PictureEx.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -197,6 +199,7 @@
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="InputInfo.cpp" />
     <ClCompile Include="LoadIng.cpp" />
     <ClCompile Include="Packer.cpp" />
     <ClCompile Include="PackerDlg.cpp" />

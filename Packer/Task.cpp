@@ -17,10 +17,8 @@
 
 GlogalExternVar *g_GlobalExternVar;
 
-
-Task::Task(HWND  hwnd)
+Task::Task()
 {
-	m_hwnd= hwnd;
 	m_lpPressData = NULL;
 	m_TargetPeTag.m_FileMapTag.m_lpFileData = NULL;
 	m_PressPeTag.m_FileMapTag.m_lpFileData = NULL;
@@ -508,6 +506,9 @@ void Task::Pack(const std::string &path)
 
 	//导出变量
 	g_GlobalExternVar = (GlogalExternVar*)GetExpVarAddr("g_globalVar");
+
+	//设置密码和日期
+	SetDateAndPassword();
 	//设置参数
 
 	if (dwResRVA != 0)
@@ -592,6 +593,17 @@ void Task::Pack(const std::string &path)
 	std::string sFileName = path.substr(0, path.length() - 4);
 	sFileName += "_Pack.exe";
 	SaveFile(sFileName.c_str());
+}
+
+void Task::SetDateAndPassword()
+{
+	if (gApplet.info.strPassword.empty())
+		g_GlobalExternVar->mPassword.isSetPassword = false;
+	else
+	{
+		g_GlobalExternVar->mPassword.isSetPassword = true;
+		strcpy(g_GlobalExternVar->mPassword.password, gApplet.info.strPassword.c_str());
+	}
 }
 
 void Task::SetGlobalVar(DWORD dwPressSize)

@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "Packer.h"
 #include "PackerDlg.h"
-
+GlobalApplet gApplet;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif

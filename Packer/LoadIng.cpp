@@ -8,15 +8,12 @@
 #include "Task.h"
 #include "util.h"
 
-extern HWND g_hwnd;
-extern std::string path;
-extern bool isPacking;
 LoadIng*currentDlg;
 // LoadIng 对话框
 
 IMPLEMENT_DYNAMIC(LoadIng, CDialogEx)
 
-LoadIng::LoadIng(CWnd* pParent /*=NULL*/)
+LoadIng::LoadIng( CWnd* pParent)
 	: CDialogEx(IDD_DIALOG1, pParent)
 {
 
@@ -26,8 +23,8 @@ LoadIng::~LoadIng()
 {
 	if (m_loadPic.IsPlaying())
 		m_loadPic.Stop();
-	g_hwnd = NULL;
 }
+
 
 void LoadIng::DoDataExchange(CDataExchange* pDX)
 {
@@ -45,16 +42,15 @@ END_MESSAGE_MAP()
 
 void ThreadFunc1(void *arglist)
 {
-	Task *task = new Task(g_hwnd);
-	replaceStringA(path);
-	task->Init(path.c_str());
+	Task *task = new Task();
+	replaceStringA(gApplet.filePath);
+	task->Init(gApplet.filePath.c_str());
 	currentDlg->ShowWindow(SW_HIDE);
-	MessageBoxW(g_hwnd, L"加壳成功", L"Packer", 0);
-	SendMessageA(g_hwnd, WM_CLOSE, 0, 0);
-	g_hwnd = NULL;
+	MessageBoxW(gApplet.loadingHwnd, L"加壳成功", L"Packer", 0);
+	SendMessageA(gApplet.loadingHwnd, WM_CLOSE, 0, 0);
+	gApplet.loadingHwnd = NULL;
 	currentDlg = nullptr;
 	delete task;
-	isPacking = false;
 	_endthread();
 }
 
@@ -63,7 +59,7 @@ BOOL LoadIng::OnInitDialog()
 	CDialogEx::OnInitDialog();
 	currentDlg = this;
 	// TODO:  在此添加额外的初始化
-	g_hwnd = this->m_hWnd;
+	gApplet.loadingHwnd = this->m_hWnd;
 	if (m_loadPic.Load(MAKEINTRESOURCE(IDR_GIF1), _T("Gif")))
 	{
 		m_loadPic.CenterWindow();

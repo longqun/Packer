@@ -31,8 +31,6 @@ protected:
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
-	afx_msg LRESULT OnUpdateProgress(WPARAM wParam, LPARAM lParam);
-	afx_msg LRESULT OnUpdateWriteMemoryProgress(WPARAM wParam, LPARAM lParam);
 	void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
@@ -43,4 +41,7 @@ public:
 	CEdit m_FileName;
 
 	afx_msg void OnBnClickedButton1();
+
+private:
+
 };

@@ -48,6 +48,12 @@
     <ClInclude Include="LoadIng.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="InputInfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PackerDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Packer.cpp">
@@ -69,6 +75,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="PictureEx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="InputInfo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

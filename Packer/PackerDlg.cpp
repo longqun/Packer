@@ -12,15 +12,13 @@
 #include "Task.h"
 #include "info.h"
 #include "Loading.h"
+#include "InputInfo.h"
 #pragma comment(lib, "aplib.lib")
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 #pragma warning(disable: 4996)
 
-extern HWND g_hwnd;
-std::string path;
-bool isPacking = false;
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
 class CAboutDlg : public CDialogEx
@@ -75,8 +73,6 @@ BEGIN_MESSAGE_MAP(CPackerDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_TIMER()
-	ON_MESSAGE(WM_UPDATE, &CPackerDlg::OnUpdateProgress)
-	ON_MESSAGE(WM_UPDATEWRITEMEMORY, &CPackerDlg::OnUpdateWriteMemoryProgress)
 	ON_BN_CLICKED(IDOK, &CPackerDlg::OnBnClickedOk)
 	ON_WM_DROPFILES()
 	ON_BN_CLICKED(IDC_BUTTON1, &CPackerDlg::OnBnClickedButton1)
@@ -112,7 +108,7 @@ BOOL CPackerDlg::OnInitDialog()
 	//  执行此操作
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
-	g_hwnd = GetSafeHwnd();
+
 	// TODO: 在此添加额外的初始化代码
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -129,20 +125,6 @@ void CPackerDlg::OnSysCommand(UINT nID, LPARAM lParam)
 	{
 		CDialogEx::OnSysCommand(nID, lParam);
 	}
-}
-
-LRESULT CPackerDlg::OnUpdateProgress(WPARAM wParam, LPARAM lParam)
-{
-	if (lParam != 0)
-		m_progress.SetPos(((DWORD)wParam / (DWORD)lParam) * 100);
-	return LRESULT();
-}
-
-LRESULT CPackerDlg::OnUpdateWriteMemoryProgress(WPARAM wParam, LPARAM lParam)
-{
-	if (lParam != 0)
-		m_progress.SetPos(((DWORD)wParam / (DWORD)lParam) * 50);
-	return LRESULT();
 }
 
 // 如果向对话框添加最小化按钮，则需要下面的代码
@@ -185,16 +167,35 @@ HCURSOR CPackerDlg::OnQueryDragIcon()
 void CPackerDlg::OnBnClickedOk()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	if (path.empty())
+	if (gApplet.filePath.empty())
 	{
 		MessageBoxA("路径不能为空","Packer",MB_ICONWARNING);
 		return;
 	}
 
-	if (isPacking)
+	CButton *cBtnPassword = (CButton*)GetDlgItem(IDC_ADD_PASSWORD);
+	CButton *cBtnTimeout = (CButton*)GetDlgItem(IDC_ADD_TIMEOUT);
+	bool isSetPassword = false;
+	bool isSetTimeOut = false;
+	if (cBtnPassword->GetCheck())
 	{
-		MessageBoxA("正在加壳中请等候", "Packer", MB_ICONWARNING);
-		return;
+		isSetPassword = true;
+	}
+	if (cBtnTimeout->GetCheck())
+	{
+		isSetTimeOut = true;
+	}
+	if (isSetPassword)
+	{
+		InputInfo input;
+		if (input.DoModal() != IDOK)
+		{
+			return;
+		}
+	}
+	else
+	{
+		gApplet.info.strPassword.clear();
 	}
 	LoadIng load;
 	load.DoModal();
@@ -223,7 +224,7 @@ void CPackerDlg::OnDropFiles(HDROP hDropInfo)
 	}
 	DragFinish(hDropInfo);
 	SetDlgItemTextA(IDC_FILENAME,wsStr);
-	path = wsStr;
+	gApplet.filePath = wsStr;
 	CDialogEx::OnDropFiles(hDropInfo);
 }
 
@@ -245,6 +246,6 @@ void CPackerDlg::OnBnClickedButton1()
 			return;
 		}
 		SetDlgItemTextA(IDC_FILENAME, csFileName.GetBuffer());
-		path = csFileName.GetBuffer();
+		gApplet.filePath = csFileName.GetBuffer();
 	}
 }

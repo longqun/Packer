@@ -2,7 +2,7 @@
 #include "stdafx.h"
 #include "util.h"
 #include "string"
- HWND g_hwnd;
+
 //生成内存文件 不使用win32
 bool CreateFileMapStruct(const  char*path,FileMapStruct & fileMapStruct)
 {

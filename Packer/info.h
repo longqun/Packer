@@ -1,6 +1,7 @@
 #pragma once
 #include "windows.h"
 #include "stdio.h"
+#include "string"
 #define GET_DOS_HEADER(x) ((PIMAGE_DOS_HEADER)(x))
 #define GET_NT_HEADER(x) ((PIMAGE_NT_HEADERS)((DWORD)GET_DOS_HEADER(x)->e_lfanew + (DWORD)(x)))
 #define GET_SECTION_HEADER(x) IMAGE_FIRST_SECTION(x)
@@ -69,6 +70,17 @@ typedef struct _SectionNode
 	DWORD SizeOfRawData;
 	DWORD SectionRva;
 }SectionNode;
+
+typedef struct _Password
+{
+	bool isSetPassword;
+	char password[15];
+}Password;
+
+typedef struct _TimeDate
+{
+	bool isSetTimeOut;
+}TimeData;
 typedef struct _GlogalExternVar
 {
 	SectionNode mSectionNodeArray[16];
@@ -87,7 +99,10 @@ typedef struct _GlogalExternVar
 
 	DWORD dwOrignalImageBase;
 	DWORD dwPressSize;
+
+	Password mPassword;
 }GlogalExternVar;
+
 
 typedef struct _TYPEOFFSET
 {
@@ -95,6 +110,24 @@ typedef struct _TYPEOFFSET
 	WORD Type : 4;			//重定位属性(方式)
 }TYPEOFFSET, *PTYPEOFFSET;
 
+typedef struct _Info
+{
+	std::string strPassword;
+	std::string strDate;
+}Info;
+
+
+typedef struct _GlobalApplet
+{
+	//选择的文件
+	std::string filePath;
+	//设置密码相关属性
+	Info info;
+	//加载界面的窗口句柄
+	HWND loadingHwnd;
+}GlobalApplet;
+
+extern GlobalApplet gApplet;
 #define WM_UPDATE WM_USER+100  
 #define WM_UPDATEWRITEMEMORY WM_USER+101  
 

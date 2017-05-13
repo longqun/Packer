@@ -9,7 +9,7 @@ class LoadIng : public CDialogEx
 	DECLARE_DYNAMIC(LoadIng)
 
 public:
-	LoadIng(CWnd* pParent = NULL);   // 标准构造函数
+	LoadIng( CWnd* pParent = NULL);   // 标准构造函数
 	virtual ~LoadIng();
 
 // 对话框数据
@@ -24,4 +24,6 @@ protected:
 public:
 	virtual BOOL OnInitDialog();
 	CPictureEx m_loadPic;
+	bool m_isSetPassword;
+	bool m_isSetTimeOut;
 };

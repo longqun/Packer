@@ -13,7 +13,7 @@ class Task
 {
 	// 构造
 public:
-	Task(HWND hwnd);	// 标准构造函数
+	Task();	// 标准构造函数
 	~Task();
 protected:
 	
@@ -48,6 +48,7 @@ protected:
 public:
 	void Init(const char * path);
 	void Pack(const std::string &path);
+	void SetDateAndPassword();
 	LPVOID m_lpPressData;
 	DWORD m_dwPressSize;
 	std::vector<MySecInfo*> m_TargetSecVector;
