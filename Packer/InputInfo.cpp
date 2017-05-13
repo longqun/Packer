@@ -37,16 +37,57 @@ END_MESSAGE_MAP()
 
 void InputInfo::OnBnClickedOk()
 {
-	// TODO: 在此添加控件通知处理程序代码
 	char buf[512];
-	GetDlgItemTextA(IDC_PASSWORD,buf,512);
+	GetDlgItemTextA(IDC_PASSWORD, buf, 512);
 	gApplet.info.strPassword.clear();
 	if (strlen(buf) > 15)
 	{
-		MessageBox("密码长度不能超过14位","提示",MB_ICONWARNING);
+		MessageBox("密码长度不能超过14位", "提示", MB_ICONWARNING);
 		return;
 	}
-	gApplet.info.strPassword = buf;
+	if (gApplet.info.setTime)
+		SetDate();
+	if (gApplet.info.setPassword)
+		gApplet.info.strPassword = buf;
 	OnOK();
 
+}
+
+void InputInfo::SetDate()
+{
+	CDateTimeCtrl *tCdateTimeCtrlDate = (CDateTimeCtrl *)GetDlgItem(IDC_DATETIMEPICKER_DATE);
+	CTime time;
+	tCdateTimeCtrlDate->GetTime(time);
+	gApplet.info.time.year = time.GetYear();
+	gApplet.info.time.month = time.GetMonth();
+	CDateTimeCtrl *tCdateTimeCtrlTime = (CDateTimeCtrl *)GetDlgItem(IDC_DATETIMEPICKER_TIME);
+	tCdateTimeCtrlTime->GetTime(time);
+	gApplet.info.time.hour = time.GetHour();
+	gApplet.info.time.minute = time.GetMinute();
+	gApplet.info.time.second = time.GetSecond();
+}
+
+
+BOOL InputInfo::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+	if (!gApplet.info.setTime)
+	{
+		SetDisable(IDC_DATETIMEPICKER_DATE);
+		SetDisable(IDC_DATETIMEPICKER_TIME);
+	}
+	if (!gApplet.info.setPassword)
+	{
+		SetDisable(IDC_PASSWORD);
+	}
+
+	// TODO:  在此添加额外的初始化
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // 异常: OCX 属性页应返回 FALSE
+}
+
+void InputInfo::SetDisable(DWORD dwId)
+{
+	GetDlgItem(dwId)->EnableWindow(FALSE);
 }

@@ -22,4 +22,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedOk();
+	void SetDate();
+	virtual BOOL OnInitDialog();
+	void SetDisable(DWORD dwId);
 };

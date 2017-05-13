@@ -14,7 +14,6 @@
 #define new DEBUG_NEW
 #endif
 
-
 GlogalExternVar *g_GlobalExternVar;
 
 Task::Task()
@@ -31,7 +30,7 @@ Task::~Task()
 	{
 		if (*temp != NULL)
 		{
-			delete [](*temp)->m_lpSecData;
+			delete[](*temp)->m_lpSecData;
 			(*temp)->m_lpSecData = NULL;
 		}
 		delete *temp;
@@ -40,7 +39,7 @@ Task::~Task()
 	{
 		if (*temp != NULL)
 		{
-			delete [](*temp)->m_lpSecData;
+			delete[](*temp)->m_lpSecData;
 			(*temp)->m_lpSecData = NULL;
 		}
 		delete *temp;
@@ -48,21 +47,21 @@ Task::~Task()
 
 	for (auto temp = m_PressSecVector.begin(); temp != m_PressSecVector.end(); temp++)
 	{
-		if(*temp != NULL)
+		if (*temp != NULL)
 		{
-			delete [](*temp)->m_lpSecData;
+			delete[](*temp)->m_lpSecData;
 			(*temp)->m_lpSecData = NULL;
 		}
 		delete *temp;
 	}
 	if (m_lpPressData != NULL)
-		delete []m_lpPressData;
+		delete[]m_lpPressData;
 	if (m_TargetPeTag.m_FileMapTag.m_lpFileData != NULL)
-		delete []m_TargetPeTag.m_FileMapTag.m_lpFileData;
+		delete[]m_TargetPeTag.m_FileMapTag.m_lpFileData;
 	if (m_PressPeTag.m_FileMapTag.m_lpFileData != NULL)
 		delete[]m_PressPeTag.m_FileMapTag.m_lpFileData;
-	if(m_ShellPeTag.m_FileMapTag.m_lpFileData!=NULL)
-		delete []m_ShellPeTag.m_FileMapTag.m_lpFileData;
+	if (m_ShellPeTag.m_FileMapTag.m_lpFileData != NULL)
+		delete[]m_ShellPeTag.m_FileMapTag.m_lpFileData;
 }
 
 void Task::SetPEStruct(char *fileBuf, PEstruct &peStruct)
@@ -269,7 +268,6 @@ void Task::AddSec(char* lpSecName, DWORD dwFileSize, LPVOID lpFileData)
 		i++;
 	}
 
-
 	IMAGE_SECTION_HEADER secheader = { 0 };
 	strcpy((char*)secheader.Name, lpSecName);
 	secheader.PointerToRawData = dwFASize;
@@ -293,7 +291,7 @@ void Task::AddSec(char* lpSecName, DWORD dwFileSize, LPVOID lpFileData)
 
 void Task::Init(const char *path)
 {
-	bool isPE=CreateFileMapStruct(path, m_TargetPeTag.m_FileMapTag);
+	bool isPE = CreateFileMapStruct(path, m_TargetPeTag.m_FileMapTag);
 	if (!isPE)
 		return;
 
@@ -492,8 +490,6 @@ void Task::fixStubRelocation()
 
 }
 
-
-
 void Task::Pack(const std::string &path)
 {
 	//获取目标区段对齐值和文件对齐值
@@ -509,7 +505,6 @@ void Task::Pack(const std::string &path)
 
 	//设置密码和日期
 	SetDateAndPassword();
-	//设置参数
 
 	if (dwResRVA != 0)
 	{
@@ -597,13 +592,20 @@ void Task::Pack(const std::string &path)
 
 void Task::SetDateAndPassword()
 {
-	if (gApplet.info.strPassword.empty())
-		g_GlobalExternVar->mPassword.isSetPassword = false;
-	else
+	if (gApplet.info.setPassword)
 	{
 		g_GlobalExternVar->mPassword.isSetPassword = true;
 		strcpy(g_GlobalExternVar->mPassword.password, gApplet.info.strPassword.c_str());
 	}
+	else
+		g_GlobalExternVar->mPassword.isSetPassword = false;
+	if (gApplet.info.setTime)
+	{
+		memcpy(&g_GlobalExternVar->mTime, &gApplet.info.time, sizeof(MTime));
+		g_GlobalExternVar->mTime.setTime=true;
+	}
+	else
+		g_GlobalExternVar->mTime.setTime = false;
 }
 
 void Task::SetGlobalVar(DWORD dwPressSize)
@@ -704,18 +706,4 @@ DWORD Task::CopyToDestMemory(DWORD dwPressSize)
 		lpDestData = NULL;
 	}
 	return dwAfterPressSize;
-}
-
-UINT Task::ThreadCallBack(void * param)
-{
-	return 0;
-}
-
-extern DWORD dwTotal;
-extern DWORD dwCompressSize;
-
-
-void Task::OnTimer(UINT_PTR nIDEvent)
-{
-	
 }

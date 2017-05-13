@@ -53,9 +53,6 @@ END_MESSAGE_MAP()
 
 
 // CPackerDlg 对话框
-
-
-
 CPackerDlg::CPackerDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_PACKER_DIALOG, pParent)
 {
@@ -72,7 +69,6 @@ BEGIN_MESSAGE_MAP(CPackerDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_WM_TIMER()
 	ON_BN_CLICKED(IDOK, &CPackerDlg::OnBnClickedOk)
 	ON_WM_DROPFILES()
 	ON_BN_CLICKED(IDC_BUTTON1, &CPackerDlg::OnBnClickedButton1)
@@ -109,8 +105,6 @@ BOOL CPackerDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
-	// TODO: 在此添加额外的初始化代码
-
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -126,10 +120,6 @@ void CPackerDlg::OnSysCommand(UINT nID, LPARAM lParam)
 		CDialogEx::OnSysCommand(nID, lParam);
 	}
 }
-
-// 如果向对话框添加最小化按钮，则需要下面的代码
-//  来绘制该图标。  对于使用文档/视图模型的 MFC 应用程序，
-//  这将由框架自动完成。
 
 void CPackerDlg::OnPaint()
 {
@@ -173,29 +163,14 @@ void CPackerDlg::OnBnClickedOk()
 		return;
 	}
 
-	CButton *cBtnPassword = (CButton*)GetDlgItem(IDC_ADD_PASSWORD);
-	CButton *cBtnTimeout = (CButton*)GetDlgItem(IDC_ADD_TIMEOUT);
-	bool isSetPassword = false;
-	bool isSetTimeOut = false;
-	if (cBtnPassword->GetCheck())
-	{
-		isSetPassword = true;
-	}
-	if (cBtnTimeout->GetCheck())
-	{
-		isSetTimeOut = true;
-	}
-	if (isSetPassword)
+	setInfo();
+	if (gApplet.info.setTime|| gApplet.info.setPassword)
 	{
 		InputInfo input;
 		if (input.DoModal() != IDOK)
 		{
 			return;
 		}
-	}
-	else
-	{
-		gApplet.info.strPassword.clear();
 	}
 	LoadIng load;
 	load.DoModal();
@@ -247,5 +222,27 @@ void CPackerDlg::OnBnClickedButton1()
 		}
 		SetDlgItemTextA(IDC_FILENAME, csFileName.GetBuffer());
 		gApplet.filePath = csFileName.GetBuffer();
+	}
+}
+
+void CPackerDlg::setInfo()
+{
+	CButton *cBtnPassword = (CButton*)GetDlgItem(IDC_ADD_PASSWORD);
+	CButton *cBtnTimeout = (CButton*)GetDlgItem(IDC_ADD_TIMEOUT);
+	if (cBtnPassword->GetCheck())
+	{
+		gApplet.info.setPassword = true;
+	}
+	else
+	{
+		gApplet.info.setPassword = false;
+	}
+	if (cBtnTimeout->GetCheck())
+	{
+		gApplet.info.setTime = true;
+	}
+	else
+	{
+		gApplet.info.setTime = false;
 	}
 }

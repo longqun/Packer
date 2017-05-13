@@ -77,10 +77,24 @@ typedef struct _Password
 	char password[15];
 }Password;
 
-typedef struct _TimeDate
+typedef struct _MTime
 {
-	bool isSetTimeOut;
-}TimeData;
+	int year;
+	int month;
+	int day;
+	int hour;
+	int minute;
+	int second;
+	bool setTime;
+}MTime;
+
+typedef struct _Info
+{
+	bool setPassword;
+	std::string strPassword;
+	bool setTime;
+	MTime time;
+}Info;
 typedef struct _GlogalExternVar
 {
 	SectionNode mSectionNodeArray[16];
@@ -101,6 +115,7 @@ typedef struct _GlogalExternVar
 	DWORD dwPressSize;
 
 	Password mPassword;
+	MTime mTime;
 }GlogalExternVar;
 
 
@@ -109,13 +124,6 @@ typedef struct _TYPEOFFSET
 	WORD offset : 12;			//偏移值
 	WORD Type : 4;			//重定位属性(方式)
 }TYPEOFFSET, *PTYPEOFFSET;
-
-typedef struct _Info
-{
-	std::string strPassword;
-	std::string strDate;
-}Info;
-
 
 typedef struct _GlobalApplet
 {
@@ -127,7 +135,6 @@ typedef struct _GlobalApplet
 	HWND loadingHwnd;
 }GlobalApplet;
 
+//保存全局信息
 extern GlobalApplet gApplet;
-#define WM_UPDATE WM_USER+100  
-#define WM_UPDATEWRITEMEMORY WM_USER+101  
 

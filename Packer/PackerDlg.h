@@ -41,7 +41,7 @@ public:
 	CEdit m_FileName;
 
 	afx_msg void OnBnClickedButton1();
-
+	void setInfo();
 private:
 
 };
