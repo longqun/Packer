@@ -36,7 +36,7 @@ bool isPEEXE32(const char *fileData)
 	}
 	if (GET_NT_HEADER(fileData)->OptionalHeader.Magic != 0x10b)
 	{
-		AfxMessageBox("不是一个有效的PE文件");
+		AfxMessageBox("只支持32位exe程序加壳");
 		return false;
 	}
 	return true;

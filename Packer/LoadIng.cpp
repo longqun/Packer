@@ -13,7 +13,7 @@ LoadIng*currentDlg;
 
 IMPLEMENT_DYNAMIC(LoadIng, CDialogEx)
 
-LoadIng::LoadIng( CWnd* pParent)
+LoadIng::LoadIng(CWnd* pParent)
 	: CDialogEx(IDD_DIALOG1, pParent)
 {
 
@@ -44,9 +44,11 @@ void ThreadFunc1(void *arglist)
 {
 	Task *task = new Task();
 	replaceStringA(gApplet.filePath);
-	task->Init(gApplet.filePath.c_str());
+	gApplet.success = false;
+	task->Start(gApplet.filePath.c_str());
 	currentDlg->ShowWindow(SW_HIDE);
-	MessageBoxW(gApplet.loadingHwnd, L"加壳成功", L"Packer", 0);
+	if (gApplet.success)
+		MessageBoxW(gApplet.loadingHwnd, L"加壳成功", L"Packer", 0);
 	SendMessageA(gApplet.loadingHwnd, WM_CLOSE, 0, 0);
 	gApplet.loadingHwnd = NULL;
 	currentDlg = nullptr;

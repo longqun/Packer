@@ -46,7 +46,7 @@ protected:
 
 	static UINT ThreadCallBack(void *param);
 public:
-	void Init(const char * path);
+	void Start(const char * path);
 	void Pack(const std::string &path);
 	void SetDateAndPassword();
 	LPVOID m_lpPressData;

@@ -289,7 +289,7 @@ void Task::AddSec(char* lpSecName, DWORD dwFileSize, LPVOID lpFileData)
 }
 
 
-void Task::Init(const char *path)
+void Task::Start(const char *path)
 {
 	bool isPE = CreateFileMapStruct(path, m_TargetPeTag.m_FileMapTag);
 	if (!isPE)
@@ -304,6 +304,7 @@ void Task::Init(const char *path)
 	StoreSectionInfo(m_TargetPeTag.m_FileMapTag.m_lpFileData, m_TargetSecVector);
 	StoreSectionInfo(m_ShellPeTag.m_FileMapTag.m_lpFileData, m_ShellSecVector);
 	Pack(path);
+	gApplet.success = true;
 }
 
 void Task::GetResRVA(char* lpFileData, DWORD& dwRVA, DWORD& dwSize)

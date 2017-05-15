@@ -133,6 +133,8 @@ typedef struct _GlobalApplet
 	Info info;
 	//加载界面的窗口句柄
 	HWND loadingHwnd;
+	//是否加壳成功
+	bool success;
 }GlobalApplet;
 
 //保存全局信息

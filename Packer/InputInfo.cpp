@@ -60,6 +60,7 @@ void InputInfo::SetDate()
 	tCdateTimeCtrlDate->GetTime(time);
 	gApplet.info.time.year = time.GetYear();
 	gApplet.info.time.month = time.GetMonth();
+	gApplet.info.time.day = time.GetDay();
 	CDateTimeCtrl *tCdateTimeCtrlTime = (CDateTimeCtrl *)GetDlgItem(IDC_DATETIMEPICKER_TIME);
 	tCdateTimeCtrlTime->GetTime(time);
 	gApplet.info.time.hour = time.GetHour();
