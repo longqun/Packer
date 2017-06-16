@@ -295,7 +295,12 @@ void Task::Start(const char *path)
 	if (!isPE)
 		return;
 
-	CreateFileMapStruct("E:/code/2017/Stub/Release/Stub.dll", m_ShellPeTag.m_FileMapTag);
+	char buf[512];
+	GetCurrentDirectoryA(512, buf);
+	std::string currentPath = buf;
+	currentPath += "\\Stub.dll";
+	replaceStringA(currentPath);
+	CreateFileMapStruct(currentPath.c_str(), m_ShellPeTag.m_FileMapTag);
 
 	SetPEStruct(m_TargetPeTag.m_FileMapTag.m_lpFileData, m_TargetPeTag);
 
@@ -443,7 +448,7 @@ void Task::fixStubRelocation()
 	m_PressPeTag.m_lpSecHeader = GET_SECTION_HEADER(GET_NT_HEADER(m_PressPeTag.m_FileMapTag.m_lpFileData));
 	MySecInfo *lpShellRelocSection = m_ShellSecVector[4];
 	DWORD j = 0;
-	while (pReloc->SizeOfBlock)
+	while (pReloc->SizeOfBlock &&pReloc->VirtualAddress)
 	{
 		PTYPEOFFSET pTypeOffset = (PTYPEOFFSET)(pReloc + 1);
 		DWORD dwNumber = (pReloc->SizeOfBlock - 8) / 2;
@@ -476,15 +481,27 @@ void Task::fixStubRelocation()
 		}
 
 		MySecInfo *info = GetSecInfoByRVA(pReloc->VirtualAddress, m_ShellPeTag.m_lpNtHeader->OptionalHeader.SectionAlignment, m_ShellSecVector);
+		if (info == NULL)
+		{
+			pReloc = (PIMAGE_BASE_RELOCATION)((DWORD)pReloc + pReloc->SizeOfBlock);
+			return;
+		}
+
 		if (strcmp((char*)info->m_SecHeader.Name, ".text") == 0)
 		{
 			DWORD dwOffset = pReloc->VirtualAddress - info->m_SecHeader.VirtualAddress;
 			pReloc->VirtualAddress = m_PressPeTag.m_lpSecHeader[1].VirtualAddress + dwOffset;
 		}
-		else
+		else if (strcmp((char*)info->m_SecHeader.Name, ".tls") == 0)
 		{
 			DWORD dwOffset = pReloc->VirtualAddress - info->m_SecHeader.VirtualAddress;
 			pReloc->VirtualAddress = m_PressPeTag.m_lpSecHeader[2].VirtualAddress + dwOffset;
+		}
+		else
+		{
+			DWORD dwOffset = pReloc->VirtualAddress - info->m_SecHeader.VirtualAddress;
+			pReloc->VirtualAddress = m_PressPeTag.m_lpSecHeader[3].VirtualAddress + dwOffset;
+
 		}
 		pReloc = (PIMAGE_BASE_RELOCATION)((DWORD)pReloc + pReloc->SizeOfBlock);
 	}
@@ -589,8 +606,22 @@ void Task::Pack(const std::string &path)
 	std::string sFileName = path.substr(0, path.length() - 4);
 	sFileName += "_Pack.exe";
 	SaveFile(sFileName.c_str());
+	
 }
-
+typedef struct _PEB
+{
+	UCHAR InheritedAddressSpace;
+	UCHAR ReadImageFileExecOptions;
+	UCHAR BeingDebugged;
+	UCHAR BitField;
+	ULONG ImageUsesLargePages : 1;
+	ULONG IsProtectedProcess : 1;
+	ULONG IsLegacyProcess : 1;
+	ULONG IsImageDynamicallyRelocated : 1;
+	ULONG SpareBits : 4;
+	PVOID Mutant;
+	PVOID ImageBaseAddress
+} PEB, *PPEB;
 void Task::SetDateAndPassword()
 {
 	if (gApplet.info.setPassword)
@@ -603,7 +634,7 @@ void Task::SetDateAndPassword()
 	if (gApplet.info.setTime)
 	{
 		memcpy(&g_GlobalExternVar->mTime, &gApplet.info.time, sizeof(MTime));
-		g_GlobalExternVar->mTime.setTime=true;
+		g_GlobalExternVar->mTime.setTime = true;
 	}
 	else
 		g_GlobalExternVar->mTime.setTime = false;
