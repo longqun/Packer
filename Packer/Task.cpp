@@ -620,7 +620,7 @@ typedef struct _PEB
 	ULONG IsImageDynamicallyRelocated : 1;
 	ULONG SpareBits : 4;
 	PVOID Mutant;
-	PVOID ImageBaseAddress
+	PVOID ImageBaseAddress;
 } PEB, *PPEB;
 void Task::SetDateAndPassword()
 {

@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Packer", "Packer\Packer.vcxproj", "{68DB45A6-D30C-4515-9C74-39514C4CB54E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Stub", "Stub\Stub.vcxproj", "{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{68DB45A6-D30C-4515-9C74-39514C4CB54E}.Release|x64.Build.0 = Release|x64
 		{68DB45A6-D30C-4515-9C74-39514C4CB54E}.Release|x86.ActiveCfg = Release|Win32
 		{68DB45A6-D30C-4515-9C74-39514C4CB54E}.Release|x86.Build.0 = Release|Win32
+		{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}.Debug|x64.ActiveCfg = Debug|x64
+		{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}.Debug|x64.Build.0 = Debug|x64
+		{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}.Debug|x86.ActiveCfg = Debug|Win32
+		{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}.Debug|x86.Build.0 = Debug|Win32
+		{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}.Release|x64.ActiveCfg = Release|x64
+		{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}.Release|x64.Build.0 = Release|x64
+		{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}.Release|x86.ActiveCfg = Release|Win32
+		{C296FD25-9FED-404A-9784-D0CA4F5FC1E8}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
