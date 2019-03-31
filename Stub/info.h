@@ -97,6 +97,16 @@ typedef BOOL(WINAPI* PESetThreadPriority)(_In_ HANDLE hThread, _In_ int nPriorit
 
 typedef DWORD(WINAPI* PEGetModuleFileNameA)(_In_opt_ HMODULE hModule, LPSTR lpFilename, _In_ DWORD nSize);
 
+typedef HANDLE (WINAPI *PECreateFileA)(
+	LPCSTR                lpFileName,
+	DWORD                 dwDesiredAccess,
+	DWORD                 dwShareMode,
+	LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+	DWORD                 dwCreationDisposition,
+	DWORD                 dwFlagsAndAttributes,
+	HANDLE                hTemplateFile
+);
+
 typedef HANDLE(WINAPI* PECreateFileW)(_In_ LPCWSTR lpFileName, _In_ DWORD dwDesiredAccess, _In_ DWORD dwShareMode, _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes, _In_ DWORD dwCreationDisposition, _In_ DWORD dwFlagsAndAttributes, _In_opt_ HANDLE hTemplateFile);
 
 typedef BOOL(WINAPI* PEWriteFile)(_In_ HANDLE hFile, _In_reads_bytes_opt_(nNumberOfBytesToWrite) LPCVOID lpBuffer, _In_ DWORD nNumberOfBytesToWrite, _Out_opt_ LPDWORD lpNumberOfBytesWritten, _Inout_opt_ LPOVERLAPPED lpOverlapped);
@@ -107,21 +117,23 @@ typedef UINT(WINAPI* PEGetDlgItemTextA)(_In_ HWND hDlg, _In_ int nIDDlgItem, _Ou
 
 typedef VOID(WINAPI* PEGetLocalTime)(_Out_ LPSYSTEMTIME lpSystemTime);
 
-typedef int (WINAPI* PEMessageBoxW)(_In_opt_ HWND hWnd,_In_opt_ LPCWSTR lpText,_In_opt_ LPCWSTR lpCaption,_In_ UINT uType);
+typedef int (WINAPI* PEMessageBoxW)(_In_opt_ HWND hWnd, _In_opt_ LPCWSTR lpText, _In_opt_ LPCWSTR lpCaption, _In_ UINT uType);
 
-typedef HANDLE (WINAPI* PECreateThread)(_In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,_In_ SIZE_T dwStackSize,_In_ LPTHREAD_START_ROUTINE lpStartAddress,_In_opt_ __drv_aliasesMem LPVOID lpParameter,_In_ DWORD dwCreationFlags,_Out_opt_ LPDWORD lpThreadId);
+typedef HANDLE(WINAPI* PECreateThread)(_In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes, _In_ SIZE_T dwStackSize, _In_ LPTHREAD_START_ROUTINE lpStartAddress, _In_opt_ __drv_aliasesMem LPVOID lpParameter, _In_ DWORD dwCreationFlags, _Out_opt_ LPDWORD lpThreadId);
 
-typedef VOID (WINAPI* PESleep)(_In_ DWORD dwMilliseconds);
+typedef VOID(WINAPI* PESleep)(_In_ DWORD dwMilliseconds);
 
-typedef BOOL (WINAPI* PEDuplicateHandle)(_In_ HANDLE hSourceProcessHandle,_In_ HANDLE hSourceHandle,_In_ HANDLE hTargetProcessHandle,_Outptr_ LPHANDLE lpTargetHandle,_In_ DWORD dwDesiredAccess,_In_ BOOL bInheritHandle,_In_ DWORD dwOptions);
+typedef BOOL(WINAPI* PEDuplicateHandle)(_In_ HANDLE hSourceProcessHandle, _In_ HANDLE hSourceHandle, _In_ HANDLE hTargetProcessHandle, _Outptr_ LPHANDLE lpTargetHandle, _In_ DWORD dwDesiredAccess, _In_ BOOL bInheritHandle, _In_ DWORD dwOptions);
 
-typedef HANDLE (WINAPI* PEGetCurrentThread)(VOID);
+typedef HANDLE(WINAPI* PEGetCurrentThread)(VOID);
 
 typedef HANDLE(WINAPI* PEGetCurrentProcess)(VOID);
 
-typedef BOOL (WINAPI* PETerminateThread)(_In_ HANDLE hThread,_In_ DWORD dwExitCode);
+typedef BOOL(WINAPI* PETerminateThread)(_In_ HANDLE hThread, _In_ DWORD dwExitCode);
 
-typedef LPTOP_LEVEL_EXCEPTION_FILTER (WINAPI* PESetUnhandledExceptionFilter)(_In_opt_ LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter);
+typedef DWORD(WINAPI *PEGetTempPathA)(DWORD nBufferLength, LPSTR lpBuffer);
+
+typedef LPTOP_LEVEL_EXCEPTION_FILTER(WINAPI* PESetUnhandledExceptionFilter)(_In_opt_ LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter);
 
 typedef struct _SHELLWINDOWSINF
 {
@@ -153,6 +165,7 @@ typedef struct _Apier
 	PESetPriorityClass SetPriorityClass;
 	PESetThreadPriority SetThreadPriority;
 	PEGetModuleFileNameA GetModuleFileNameA;
+	PECreateFileA CreateFileA;
 	PECreateFileW CreateFileW;
 	PEWriteFile WriteFile;
 	PECloseHandle CloseHandle;
@@ -166,6 +179,7 @@ typedef struct _Apier
 	PEGetCurrentProcess GetCurrentProcess;
 	PETerminateThread TerminateThread;
 	PESetUnhandledExceptionFilter SetUnhandledExceptionFilter;
+	PEGetTempPathA GetTempPathA;
 	DWORD ImageBase;
 	PIMAGE_TLS_DIRECTORY pTLSDirectory;
 	HWND ParentHwnd;
