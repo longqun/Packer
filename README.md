@@ -14,6 +14,11 @@
 将Packer和Stub都设置成x86 release下编译即可
 <br>
 
+文件运行截图:
+-------
+<br>
+![image](https://github.com/longqun/Packer/raw/master/ScreenShot/5.jpg)
+
 程序处理流程:
 -------
 1读取加壳文件，外壳DLL
@@ -30,8 +35,6 @@
 <br>
 7:写入文件
 <br>
-
-
 
 原始区段信息
 <br>
