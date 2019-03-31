@@ -17,7 +17,7 @@
 文件运行截图:
 -------
 <br>
-![image](https://github.com/longqun/Packer/raw/master/ScreenShot/5.jpg)
+![image](https://github.com/longqun/Packer/raw/master/ScreenShot/5.PNG)
 
 程序处理流程:
 -------
