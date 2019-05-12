@@ -8,8 +8,13 @@
 #include "afxdialogex.h"
 #include "util.h"
 #include "vector"
+
 #include "aplib.h"
-#pragma comment(lib, "aplib.lib")
+#ifdef _WIN64
+#pragma comment(lib, "./lib/x64/aplib.lib")
+#else
+#pragma comment(lib, "./lib/x86/aplib.lib")
+#endif // _WIN64
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -75,7 +80,7 @@ DWORD Task::RVA2FA(char* lpFileBuffer, int RVA)
 {
 	PEstruct thePEStruct;
 	thePEStruct.m_lpDosHeader = (IMAGE_DOS_HEADER*)lpFileBuffer;
-	thePEStruct.m_lpNtHeader = (IMAGE_NT_HEADERS*)(thePEStruct.m_lpDosHeader->e_lfanew + (DWORD)lpFileBuffer);
+	thePEStruct.m_lpNtHeader = (IMAGE_NT_HEADERS*)(thePEStruct.m_lpDosHeader->e_lfanew + lpFileBuffer);
 
 	int nSecCount = thePEStruct.m_lpNtHeader->FileHeader.NumberOfSections;
 	int nOptionalHeaderSize = thePEStruct.m_lpNtHeader->FileHeader.SizeOfOptionalHeader;
@@ -141,7 +146,7 @@ void Task::StoreSectionInfo(char *bufFile, std::vector<MySecInfo*>&vec)
 	IMAGE_NT_HEADERS* pImageNtHeader = GET_NT_HEADER(bufFile);
 	PIMAGE_SECTION_HEADER pImageSectionHeader = GET_SECTION_HEADER(pImageNtHeader);
 	DWORD nCount = pImageNtHeader->FileHeader.NumberOfSections;
-	for (int i = 0; i < nCount; i++)
+	for (DWORD i = 0; i < nCount; i++)
 	{
 		MySecInfo *lpSecInfo = new MySecInfo;
 		lpSecInfo->m_SecHeader = *pImageSectionHeader;
@@ -251,8 +256,8 @@ void Task::AddSec(char* lpSecName, DWORD dwFileSize, LPVOID lpFileData)
 {
 	PEstruct PeStruct;
 	PeStruct.m_lpDosHeader = (IMAGE_DOS_HEADER*)lpFileData;
-	PeStruct.m_lpNtHeader = (IMAGE_NT_HEADERS*)((DWORD)lpFileData + PeStruct.m_lpDosHeader->e_lfanew);
-	PeStruct.m_lpSecHeader = (IMAGE_SECTION_HEADER*)((DWORD)lpFileData + PeStruct.m_lpDosHeader->e_lfanew + 4 + sizeof(IMAGE_FILE_HEADER)
+	PeStruct.m_lpNtHeader = (IMAGE_NT_HEADERS*)((char *)lpFileData + PeStruct.m_lpDosHeader->e_lfanew);
+	PeStruct.m_lpSecHeader = (IMAGE_SECTION_HEADER*)((char *)lpFileData + PeStruct.m_lpDosHeader->e_lfanew + 4 + sizeof(IMAGE_FILE_HEADER)
 		+ PeStruct.m_lpNtHeader->FileHeader.SizeOfOptionalHeader);
 	DWORD dwRVA = Align(PeStruct.m_lpNtHeader->OptionalHeader.SectionAlignment, PeStruct.m_lpNtHeader->OptionalHeader.SizeOfHeaders);
 	DWORD dwFASize = PeStruct.m_lpNtHeader->OptionalHeader.SizeOfHeaders;
@@ -316,8 +321,8 @@ void Task::GetResRVA(char* lpFileData, DWORD& dwRVA, DWORD& dwSize)
 {
 	PEstruct PeStruct;
 	PeStruct.m_lpDosHeader = (IMAGE_DOS_HEADER*)lpFileData;
-	PeStruct.m_lpNtHeader = (IMAGE_NT_HEADERS*)((DWORD)lpFileData + PeStruct.m_lpDosHeader->e_lfanew);
-	PeStruct.m_lpSecHeader = (IMAGE_SECTION_HEADER*)((DWORD)lpFileData + PeStruct.m_lpDosHeader->e_lfanew + 4 + sizeof(IMAGE_FILE_HEADER)
+	PeStruct.m_lpNtHeader = (IMAGE_NT_HEADERS*)((char *)lpFileData + PeStruct.m_lpDosHeader->e_lfanew);
+	PeStruct.m_lpSecHeader = (IMAGE_SECTION_HEADER*)((char *)lpFileData + PeStruct.m_lpDosHeader->e_lfanew + 4 + sizeof(IMAGE_FILE_HEADER)
 		+ PeStruct.m_lpNtHeader->FileHeader.SizeOfOptionalHeader);
 	DWORD dwVASize = PeStruct.m_lpSecHeader->VirtualAddress;
 	DWORD dwFASize = PeStruct.m_lpSecHeader->PointerToRawData;
@@ -356,17 +361,17 @@ void Task::FixRsrc(MySecInfo *lpResSecInfo)
 			if (lpRESOURCE_DIRECTORY->DataIsDirectory == 1)
 			{
 				//第二层目录
-				DWORD RESOURCEAdder = lpRESOURCE_DIRECTORY->OffsetToDirectory + (DWORD)lpIMAGE_RESOURCE_DIRECTORY;
+				void *RESOURCEAdder = lpRESOURCE_DIRECTORY->OffsetToDirectory + (char *)lpIMAGE_RESOURCE_DIRECTORY;
 				IMAGE_RESOURCE_DIRECTORY* lpSecond = (IMAGE_RESOURCE_DIRECTORY*)RESOURCEAdder;
 				IMAGE_RESOURCE_DIRECTORY_ENTRY* lpSecond2 = (IMAGE_RESOURCE_DIRECTORY_ENTRY*)(lpSecond + 1);
 				for (int l = 0; l < lpSecond->NumberOfNamedEntries; l++)
 				{
 					//第三层数据
-					IMAGE_RESOURCE_DIRECTORY* lpThrid = (IMAGE_RESOURCE_DIRECTORY*)(lpSecond2->OffsetToDirectory + (DWORD)lpIMAGE_RESOURCE_DIRECTORY);
+					IMAGE_RESOURCE_DIRECTORY* lpThrid = (IMAGE_RESOURCE_DIRECTORY*)(lpSecond2->OffsetToDirectory + (char *)lpIMAGE_RESOURCE_DIRECTORY);
 					IMAGE_RESOURCE_DIRECTORY_ENTRY* lpThridEntry = (IMAGE_RESOURCE_DIRECTORY_ENTRY*)(lpThrid + 1);
 					for (int k = 0; k < lpThrid->NumberOfIdEntries; k++)
 					{
-						DWORD* lpDwAddress = (DWORD*)(lpThridEntry->OffsetToData + (DWORD)lpIMAGE_RESOURCE_DIRECTORY);
+						DWORD* lpDwAddress = (DWORD*)(lpThridEntry->OffsetToData + (char *)lpIMAGE_RESOURCE_DIRECTORY);
 						//修改偏移 = 基址 + 差值
 						*lpDwAddress = dwResRVA + *lpDwAddress - lpResSecInfo->m_SecHeader.VirtualAddress;
 						lpThridEntry++;
@@ -376,11 +381,11 @@ void Task::FixRsrc(MySecInfo *lpResSecInfo)
 				for (int j = 0; j < lpSecond->NumberOfIdEntries; j++)
 				{
 					//第三层数据
-					IMAGE_RESOURCE_DIRECTORY* lpThrid = (IMAGE_RESOURCE_DIRECTORY*)(lpSecond2->OffsetToDirectory + (DWORD)lpIMAGE_RESOURCE_DIRECTORY);
+					IMAGE_RESOURCE_DIRECTORY* lpThrid = (IMAGE_RESOURCE_DIRECTORY*)(lpSecond2->OffsetToDirectory + (char *)lpIMAGE_RESOURCE_DIRECTORY);
 					IMAGE_RESOURCE_DIRECTORY_ENTRY* lpThridEntry = (IMAGE_RESOURCE_DIRECTORY_ENTRY*)(lpThrid + 1);
 					for (int k = 0; k < lpThrid->NumberOfIdEntries; k++)
 					{
-						DWORD* lpDwAddress = (DWORD*)(lpThridEntry->OffsetToData + (DWORD)lpIMAGE_RESOURCE_DIRECTORY);
+						DWORD* lpDwAddress = (DWORD*)(lpThridEntry->OffsetToData + (char *)lpIMAGE_RESOURCE_DIRECTORY);
 						//修改偏移 = 基址 + 差值
 						*lpDwAddress = dwResRVA + *lpDwAddress - lpResSecInfo->m_SecHeader.VirtualAddress;
 						lpThridEntry++;
@@ -433,7 +438,7 @@ void Task::ClearDataDir(char* lpFileData)
 	peStruct.m_lpDosHeader = (IMAGE_DOS_HEADER*)lpFileData;
 	peStruct.m_lpNtHeader = (IMAGE_NT_HEADERS*)(lpFileData + peStruct.m_lpDosHeader->e_lfanew);
 	DWORD dwDataDirCount = peStruct.m_lpNtHeader->OptionalHeader.NumberOfRvaAndSizes;
-	for (int i = 0; i < dwDataDirCount; i++)
+	for (DWORD i = 0; i < dwDataDirCount; i++)
 	{
 		peStruct.m_lpNtHeader->OptionalHeader.DataDirectory[i].VirtualAddress = 0;
 		peStruct.m_lpNtHeader->OptionalHeader.DataDirectory[i].Size = 0;
@@ -452,14 +457,14 @@ void Task::fixStubRelocation()
 	{
 		PTYPEOFFSET pTypeOffset = (PTYPEOFFSET)(pReloc + 1);
 		DWORD dwNumber = (pReloc->SizeOfBlock - 8) / 2;
-		for (int i = 0; i < dwNumber; i++)
+		for (DWORD i = 0; i < dwNumber; i++)
 		{
 			if (*(PWORD)(&pTypeOffset[i]) == 0)
 			{
 				break;
 			}
 			DWORD dwRVA = pTypeOffset[i].offset + pReloc->VirtualAddress;
-			DWORD dwAddressOfReloc = *(PDWORD)((DWORD)m_ShellPeTag.m_FileMapTag.m_lpFileData + RVA2FA(m_ShellPeTag.m_FileMapTag.m_lpFileData, dwRVA));
+			DWORD dwAddressOfReloc = *(PDWORD)((char *)m_ShellPeTag.m_FileMapTag.m_lpFileData + RVA2FA(m_ShellPeTag.m_FileMapTag.m_lpFileData, dwRVA));
 
 
 			MySecInfo*info = GetSecInfoByRVA(dwAddressOfReloc - m_ShellPeTag.m_lpNtHeader->OptionalHeader.ImageBase, m_ShellPeTag.m_lpNtHeader->OptionalHeader.SectionAlignment, m_ShellSecVector);

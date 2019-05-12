@@ -5,3 +5,11 @@
 /Release
 /Packer/Debug
 *.tmp
+*.obj
+*.tlog
+*.pdb
+*.ipch
+*.pch
+*.iobj
+*.ipdb
+*.log

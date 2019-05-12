@@ -40,13 +40,13 @@ typedef struct _GlogalExternVar
 	//加壳的tls虚拟地址 rva
 	DWORD dwTLSVirtualAddress;
 	//加壳的原始oep
-	DWORD dwOrignalOEP;
+	HMODULE dwOrignalOEP;
 	//重定位rva
 	DWORD dwRelocationRva;
 
 	DWORD dwBaseOfCode;
 
-	DWORD dwOrignalImageBase;
+	HMODULE dwOrignalImageBase;
 	DWORD dwPressSize;
 
 	Password mPassword;
@@ -59,7 +59,7 @@ typedef HMODULE(WINAPI*PEGetModuleHandleW)(_In_opt_ LPCWSTR lpModuleName);
 
 typedef HMODULE(WINAPI*PELoadLibraryExA)(_In_ LPCSTR lpLibFileName, HANDLE file, DWORD mode);
 
-typedef  DWORD(WINAPI *PEGetProcAddress)(_In_ HMODULE hModule, _In_ LPCSTR lpProcName);
+typedef  FARPROC(WINAPI *PEGetProcAddress)(_In_ HMODULE hModule, _In_ LPCSTR lpProcName);
 
 typedef BOOL(WINAPI *LPVIRTUALPROTECT)(LPVOID, SIZE_T, DWORD, PDWORD); // VirtualProtect
 
@@ -180,7 +180,7 @@ typedef struct _Apier
 	PETerminateThread TerminateThread;
 	PESetUnhandledExceptionFilter SetUnhandledExceptionFilter;
 	PEGetTempPathA GetTempPathA;
-	DWORD ImageBase;
+	HMODULE ImageBase;
 	PIMAGE_TLS_DIRECTORY pTLSDirectory;
 	HWND ParentHwnd;
 	SHELLWINDOWSINF ExeWindowsInf[3];

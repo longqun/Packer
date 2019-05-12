@@ -7,8 +7,15 @@
 #pragma comment(linker, "/MERGE:.rdata=.text")
 #pragma comment(linker, "/section:.text,RWE") 
 #pragma comment(linker,"/ENTRY:MyMain")
+#include "asm.h"
+
 #include "aplib.h"
-#pragma comment(lib, "aplib.lib")
+#ifdef _WIN64
+#pragma comment(lib, "./lib/x64/aplib.lib")
+#else
+#pragma comment(lib, "./lib/x86/aplib.lib")
+#endif // _WIN64
+
 
 #ifndef IMAGE_SIZEOF_BASE_RELOCATION 
 // Vista SDKs no longer define IMAGE_SIZEOF_BASE_RELOCATION!? 
@@ -55,6 +62,8 @@ extern "C" {
 #else
 #define LOGGER_MESSAGE(fmt, ...) 
 #endif
+
+
 
 static Apier s_apier;
 static HANDLE s_log_handle = INVALID_HANDLE_VALUE;
@@ -124,14 +133,14 @@ void memsetZero(void *src, size_t length)
 static IMAGE_NT_HEADERS  *getNtHeader(HMODULE hModule) {
 
 	IMAGE_DOS_HEADER* lpDosHeader = (IMAGE_DOS_HEADER*)hModule;
-	return (IMAGE_NT_HEADERS*)(lpDosHeader->e_lfanew + (DWORD)hModule);
+	return (IMAGE_NT_HEADERS*)(lpDosHeader->e_lfanew + (char *)hModule);
 }
 
 static IMAGE_SECTION_HEADER *getImageSectionHeader(HMODULE hModule)
 {
 	IMAGE_DOS_HEADER* lpDosHeader = (IMAGE_DOS_HEADER*)hModule;
-	IMAGE_NT_HEADERS* lpNtHeader = (IMAGE_NT_HEADERS*)(lpDosHeader->e_lfanew + (DWORD)hModule);
-	return (IMAGE_SECTION_HEADER*)((DWORD)hModule +
+	IMAGE_NT_HEADERS* lpNtHeader = (IMAGE_NT_HEADERS*)(lpDosHeader->e_lfanew + (char *)hModule);
+	return (IMAGE_SECTION_HEADER*)((char *)hModule +
 		lpDosHeader->e_lfanew + sizeof(lpNtHeader->Signature) +
 		sizeof(lpNtHeader->FileHeader) +
 		lpNtHeader->FileHeader.SizeOfOptionalHeader);
@@ -139,7 +148,7 @@ static IMAGE_SECTION_HEADER *getImageSectionHeader(HMODULE hModule)
 
 
 /*
-	remember VirtualFree
+remember VirtualFree
 */
 static char  *int_to_str(int val)
 {
@@ -241,6 +250,7 @@ static void initFunction();
 static DWORD isDebug()
 {
 	DWORD value = 0;
+#ifndef _WIN64
 	//OD 无效
 	_asm
 	{
@@ -249,15 +259,19 @@ static DWORD isDebug()
 		movzx eax, [eax + 2]    // PEB->BeingDebugged
 		mov   value, eax
 	}
+#endif // !_WIN64
+
+
 	return value;
 }
 
-
+#ifndef _WIN64
 static LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *pei)
 {
 	pei->ContextRecord->Eip += 2;
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
+#endif
 
 static LONG WINAPI MyUnhandledExceptionFilter1(struct _EXCEPTION_POINTERS *pei)
 {
@@ -266,12 +280,16 @@ static LONG WINAPI MyUnhandledExceptionFilter1(struct _EXCEPTION_POINTERS *pei)
 
 static bool isDebug1()
 {
+#ifndef _WIN64
 	s_apier.SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
 	_asm
 	{
 		xor eax, eax
 		jmp eax
 	}
+#endif // !_WIN64
+
+
 	return false;
 }
 
@@ -296,30 +314,68 @@ static void WINAPI TlsCallBack(PVOID dwDllHandle, DWORD dwReason, PVOID pReserve
 	g_strTLS = L"go";
 }
 
-#ifdef _M_IX86
-#pragma comment (linker, "/INCLUDE:__tls_used")
-#pragma comment (linker, "/INCLUDE:__tls_callback")
+#ifdef _WIN64
+#pragma comment (linker, "/INCLUDE:_tls_used")  // See p. 1 below
+#pragma comment (linker, "/INCLUDE:tls_callback_func")  // See p. 3 below
 #else
-#pragma comment (linker, "/INCLUDE:_tls_used")
-#pragma comment (linker, "/INCLUDE:_tls_callback")
+#pragma comment (linker, "/INCLUDE:__tls_used")  // See p. 1 below
+#pragma comment (linker, "/INCLUDE:_tls_callback_func")  // See p. 3 below
 #endif
-//创建TLS段
+
+// Explained in p. 3 below
+#ifdef _WIN64
+#pragma const_seg(".CRT$XLF")
+EXTERN_C const
+#else
+#pragma data_seg(".CRT$XLF")
 EXTERN_C
-#ifdef _M_X64
-#pragma const_seg (".CRT$XLB")
-const
-#else
-#pragma data_seg (".CRT$XLB")
 #endif
-PIMAGE_TLS_CALLBACK _tls_callback[] = { TlsCallBack, 0 };
-#pragma data_seg ()
-#pragma const_seg ()
+PIMAGE_TLS_CALLBACK tls_callback_func = TlsCallBack;
+#ifdef _WIN64
+#pragma const_seg()
+#else
+#pragma data_seg()
+#endif //_WIN64
 
+#ifdef _WIN64
+extern "C" void* _cdecl GetPeb();
+#endif // _WIN64
 
+#ifdef _WIN64
 
-static DWORD GetKernel32Base()
+typedef struct _UNICODE_STRING {
+	USHORT  Length;     //UNICODE占用的内存字节数，个数*2；
+	USHORT  MaximumLength;
+	PWSTR  Buffer;
+} UNICODE_STRING, *PUNICODE_STRING;
+
+static void *GetKernel32Base()
 {
-	DWORD dwKernel32Addr = 0;
+	void *peb = GetPeb();
+	PVOID64 LDR_DATA_Addr = *(PVOID64**)((BYTE*)peb + 0x018);
+	UNICODE_STRING* FullName;
+	HMODULE hKernel32 = NULL;
+	LIST_ENTRY* pNode = NULL;
+	pNode = (LIST_ENTRY*)(*(PVOID64**)((BYTE*)LDR_DATA_Addr + 0x30));  //偏移到InInitializationOrderModuleList
+	while (true)
+	{
+		FullName = (UNICODE_STRING*)((BYTE*)pNode + 0x38);//BaseDllName基于InInitialzationOrderModuList的偏移
+		if (*(FullName->Buffer + 12) == '\0')
+		{
+			hKernel32 = (HMODULE)(*((ULONG64*)((BYTE*)pNode + 0x10)));//DllBase
+			break;
+		}
+		pNode = pNode->Flink;
+	}
+	return hKernel32;
+}
+
+#else
+
+static void *GetKernel32Base()
+{
+	void *ptr = NULL;
+	DWORD test = 0;
 	_asm
 	{
 		pushad
@@ -333,56 +389,75 @@ static DWORD GetKernel32Base()
 					mov esi, [esi]
 					cmp[edi + 12 * 2], cx
 					jnz next_module
-					mov dwKernel32Addr, eax
+					mov test, eax
 					popad
 	}
-	return dwKernel32Addr;
+	return (void *)test;
 }
 
-static DWORD GetGPAFunAddr()
+#endif
+
+int __cdecl mstrcmp(
+	_In_z_ char const* _Str1,
+	_In_z_ char const* _Str2
+) {
+	int index = 0;
+	while (true) {
+		if (_Str1[index] == _Str2[index]) {
+			if (_Str1[index] == '0')
+				return 0;
+		}
+		else
+			return _Str1[index] > _Str2[index] ? 1 : -1;
+
+	}
+	return 0;
+}
+
+static void* GetGPAFunAddr()
 {
-	DWORD dwAddrBase = GetKernel32Base();
+	void * ptr_kernel_32_base = GetKernel32Base();
 
 	// 1. 获取DOS头、NT头
 	PIMAGE_DOS_HEADER pDos_Header;
 	PIMAGE_NT_HEADERS pNt_Header;
-	pDos_Header = (PIMAGE_DOS_HEADER)dwAddrBase;
-	pNt_Header = (PIMAGE_NT_HEADERS)(dwAddrBase + pDos_Header->e_lfanew);
+	pDos_Header = (PIMAGE_DOS_HEADER)ptr_kernel_32_base;
+	pNt_Header = (PIMAGE_NT_HEADERS)((char *)ptr_kernel_32_base + pDos_Header->e_lfanew);
 
 	// 2. 获取导出表项
 	PIMAGE_DATA_DIRECTORY   pDataDir;
 	PIMAGE_EXPORT_DIRECTORY pExport;
 	pDataDir = pNt_Header->OptionalHeader.DataDirectory + IMAGE_DIRECTORY_ENTRY_EXPORT;
-	pExport = (PIMAGE_EXPORT_DIRECTORY)(dwAddrBase + pDataDir->VirtualAddress);
+	pExport = (PIMAGE_EXPORT_DIRECTORY)((char *)ptr_kernel_32_base + pDataDir->VirtualAddress);
 
 	// 3. 获取导出表详细信息
-	PDWORD pAddrOfFun = (PDWORD)(pExport->AddressOfFunctions + dwAddrBase);
-	PDWORD pAddrOfNames = (PDWORD)(pExport->AddressOfNames + dwAddrBase);
-	PWORD  pAddrOfOrdinals = (PWORD)(pExport->AddressOfNameOrdinals + dwAddrBase);
+	PDWORD pAddrOfFun = (PDWORD)(pExport->AddressOfFunctions + (char *)ptr_kernel_32_base);
+	PDWORD pAddrOfNames = (PDWORD)(pExport->AddressOfNames + (char *)ptr_kernel_32_base);
+	PWORD  pAddrOfOrdinals = (PWORD)(pExport->AddressOfNameOrdinals + (char *)ptr_kernel_32_base);
 
 	// 4. 处理以函数名查找函数地址的请求，循环获取ENT中的函数名，并与传入值对比对，如能匹配上
 	//    则在EAT中以指定序号作为索引，并取出其地址值。
-	DWORD dwFunAddr = 0;
+	void *fun_addr = 0;
 	for (DWORD i = 0; i < pExport->NumberOfNames; i++)
 	{
-		PCHAR lpFunName = (PCHAR)(pAddrOfNames[i] + dwAddrBase);
-		if (strcmp(lpFunName, "GetProcAddress") == 0)
+		PCHAR lpFunName = (PCHAR)(pAddrOfNames[i] + (char *)ptr_kernel_32_base);
+		if (mstrcmp(lpFunName, "GetProcAddress") == 0)
 		{
-			dwFunAddr = pAddrOfFun[pAddrOfOrdinals[i]] + dwAddrBase;
-			return dwFunAddr;
+			fun_addr = pAddrOfFun[pAddrOfOrdinals[i]] + (char *)ptr_kernel_32_base;
+			return fun_addr;
 		}
 		if (i == pExport->NumberOfNames - 1)
 			return 0;
 	}
-	return dwFunAddr;
+	return fun_addr;
 }
 
 /*
-	初始化必要的函数信息
+初始化必要的函数信息
 */
 void initFunction()
 {
-	HMODULE hKernel32 = (HMODULE)GetKernel32Base();
+	void* hKernel32 = GetKernel32Base();
 	s_apier.GetProcAddress = (PEGetProcAddress)GetGPAFunAddr();
 	s_apier.LoadLibraryExA = (PELoadLibraryExA)s_apier.GetProcAddress((HMODULE)hKernel32, "LoadLibraryExA");
 	s_apier.GetModuleHandleW = (PEGetModuleHandleW)s_apier.GetProcAddress((HMODULE)hKernel32, "GetModuleHandleW");
@@ -401,7 +476,7 @@ void initFunction()
 	s_apier.GetMessageW = (PEGetMessageW)s_apier.GetProcAddress(hUser32, "GetMessageW");
 	s_apier.TranslateMessage = (PETranslateMessage)s_apier.GetProcAddress(hUser32, "TranslateMessage");
 	s_apier.DispatchMessageW = (PEDispatchMessageW)s_apier.GetProcAddress(hUser32, "DispatchMessageW");
-	s_apier.ImageBase = (DWORD)s_apier.GetModuleHandleW(NULL);
+	s_apier.ImageBase = s_apier.GetModuleHandleW(NULL);
 	s_apier.PostQuitMessage = (PEPostQuitMessage)s_apier.GetProcAddress(hUser32, "PostQuitMessage");
 	s_apier.ExitProcess = (PEExitProcess)s_apier.GetProcAddress((HMODULE)hKernel32, "ExitProcess");
 	s_apier.DestroyWindow = (PEDestroyWindow)s_apier.GetProcAddress(hUser32, "DestroyWindow");
@@ -418,15 +493,15 @@ void initFunction()
 	s_apier.GetDlgItemTextA = (PEGetDlgItemTextA)s_apier.GetProcAddress(hUser32, "GetDlgItemTextA");
 	s_apier.GetLocalTime = (PEGetLocalTime)s_apier.GetProcAddress((HMODULE)hKernel32, "GetLocalTime");
 	s_apier.MessageBoxW = (PEMessageBoxW)s_apier.GetProcAddress(hUser32, "MessageBoxW");
-	s_apier.CreateThread = (PECreateThread)s_apier.GetProcAddress(hKernel32, "CreateThread");
-	s_apier.Sleep = (PESleep)s_apier.GetProcAddress(hKernel32, "Sleep");
-	s_apier.DuplicateHandle = (PEDuplicateHandle)s_apier.GetProcAddress(hKernel32, "DuplicateHandle");
-	s_apier.GetCurrentProcess = (PEGetCurrentProcess)s_apier.GetProcAddress(hKernel32, "GetCurrentProcess");
-	s_apier.GetCurrentThread = (PEGetCurrentThread)s_apier.GetProcAddress(hKernel32, "GetCurrentThread");
-	s_apier.TerminateThread = (PETerminateThread)s_apier.GetProcAddress(hKernel32, "TerminateThread");
-	s_apier.SetUnhandledExceptionFilter = (PESetUnhandledExceptionFilter)s_apier.GetProcAddress(hKernel32, "SetUnhandledExceptionFilter");
+	s_apier.CreateThread = (PECreateThread)s_apier.GetProcAddress((HMODULE)hKernel32, "CreateThread");
+	s_apier.Sleep = (PESleep)s_apier.GetProcAddress((HMODULE)hKernel32, "Sleep");
+	s_apier.DuplicateHandle = (PEDuplicateHandle)s_apier.GetProcAddress((HMODULE)hKernel32, "DuplicateHandle");
+	s_apier.GetCurrentProcess = (PEGetCurrentProcess)s_apier.GetProcAddress((HMODULE)hKernel32, "GetCurrentProcess");
+	s_apier.GetCurrentThread = (PEGetCurrentThread)s_apier.GetProcAddress((HMODULE)hKernel32, "GetCurrentThread");
+	s_apier.TerminateThread = (PETerminateThread)s_apier.GetProcAddress((HMODULE)hKernel32, "TerminateThread");
+	s_apier.SetUnhandledExceptionFilter = (PESetUnhandledExceptionFilter)s_apier.GetProcAddress((HMODULE)hKernel32, "SetUnhandledExceptionFilter");
 	IMAGE_DOS_HEADER* lpDosHeader = (IMAGE_DOS_HEADER*)s_apier.ImageBase;
-	IMAGE_NT_HEADERS* lpNtHeader = (IMAGE_NT_HEADERS*)(lpDosHeader->e_lfanew + (DWORD)s_apier.ImageBase);
+	IMAGE_NT_HEADERS* lpNtHeader = (IMAGE_NT_HEADERS*)(lpDosHeader->e_lfanew + (char *)s_apier.ImageBase);
 	//rva
 	s_apier.pTLSDirectory = (PIMAGE_TLS_DIRECTORY)(lpNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].VirtualAddress + s_apier.ImageBase);
 
@@ -438,7 +513,7 @@ void initFunction()
 
 
 /*
-	获取当前运行的进程地址
+获取当前运行的进程地址
 */
 
 static char *getExePath()
@@ -457,7 +532,7 @@ static char *getExePath()
 }
 
 /*
-	生成临时bat文件字符串,使用mfree删除
+生成临时bat文件字符串,使用mfree删除
 */
 static char *getTempDelBatFilePath()
 {
@@ -604,13 +679,13 @@ static int recoverIAT()
 	}
 
 	//导入表处理
-	lpImportTable = (IMAGE_IMPORT_DESCRIPTOR*)((DWORD)lpImageBase + g_globalVar.dwIATVirtualAddress);
+	lpImportTable = (IMAGE_IMPORT_DESCRIPTOR*)((char *)lpImageBase + g_globalVar.dwIATVirtualAddress);
 
 	while (lpImportTable && lpImportTable->Name)
 	{
-		DWORD* lpIAT;
+		FARPROC *lpIAT;
 		IMAGE_THUNK_DATA* lpThunkData;
-		HMODULE hDll = s_apier.LoadLibraryExA((char*)(lpImportTable->Name + (DWORD)lpImageBase), NULL, 0);
+		HMODULE hDll = s_apier.LoadLibraryExA((char*)(lpImportTable->Name + (char *)lpImageBase), NULL, 0);
 
 		if (!hDll || lpImportTable->OriginalFirstThunk == 0 || lpImportTable->FirstThunk == 0)
 		{
@@ -619,26 +694,26 @@ static int recoverIAT()
 		}
 
 		//需要将函数地址写入的地方
-		lpIAT = (DWORD*)(lpImportTable->FirstThunk + (DWORD)lpImageBase);
-		lpThunkData = (IMAGE_THUNK_DATA*)((DWORD)lpImageBase + lpImportTable->OriginalFirstThunk);
+		lpIAT = (FARPROC *)(lpImportTable->FirstThunk + (char *)lpImageBase);
+		lpThunkData = (IMAGE_THUNK_DATA*)((char *)lpImageBase + lpImportTable->OriginalFirstThunk);
 
 		while (lpThunkData->u1.Ordinal != 0)
 		{
-			DWORD funName;
+			char *funName;
 			DWORD dwOldProtect;
 			//名字导出
 			if ((lpThunkData->u1.Ordinal & 0x80000000) == 0)
 			{
-				IMAGE_IMPORT_BY_NAME* lpImprotName = (IMAGE_IMPORT_BY_NAME*)((DWORD)lpImageBase + lpThunkData->u1.Ordinal);
-				funName = (DWORD)&(lpImprotName->Name);
+				IMAGE_IMPORT_BY_NAME* lpImprotName = (IMAGE_IMPORT_BY_NAME*)((char *)lpImageBase + lpThunkData->u1.Ordinal);
+				funName = (char *)&(lpImprotName->Name);
 			}
 			else
 			{
-				funName = lpThunkData->u1.Ordinal & 0xffff;
+				funName = (char *)(lpThunkData->u1.Ordinal & 0xffff);
 			}
 
 			s_apier.VirtualProtect(lpIAT, sizeof(void *), PAGE_EXECUTE_READWRITE, &dwOldProtect);
-			*(lpIAT) = (DWORD)s_apier.GetProcAddress(hDll, (char*)funName);
+			*(lpIAT) = s_apier.GetProcAddress(hDll, funName);
 			s_apier.VirtualProtect(lpIAT, sizeof(void *), dwOldProtect, NULL);
 			lpIAT++;
 			lpThunkData++;
@@ -659,28 +734,28 @@ typedef struct _TYPEOFFSET
 【基址重定位位于数据目录表的第六项，共8 + N字节】
 typedef struct _IMAGE_BASE_RELOCATION
 {
-	DWORD VirtualAddress; //重定位数据开始的RVA 地址
-	DWORD SizeOfBlock;	  //重定位块得长度，标识重定向字段个数
-	//WORD TypeOffset;      //重定项位数组相对虚拟RVA, 个数动态分配
+DWORD VirtualAddress; //重定位数据开始的RVA 地址
+DWORD SizeOfBlock;	  //重定位块得长度，标识重定向字段个数
+//WORD TypeOffset;      //重定项位数组相对虚拟RVA, 个数动态分配
 }IMAGE_BASE_RELOCATION, *PIMAGE_BASE_RELOCATION;
 
 */
 
 int fixRelocation()
 {
-	DWORD dwImageBase;
+	HMODULE hmImageBase;
 	PIMAGE_BASE_RELOCATION	pReloc;
 
 	if (g_globalVar.dwRelocationRva == 0)
 		return 0;
 
-	dwImageBase = (DWORD)s_apier.GetModuleHandleW(NULL);
-	if (dwImageBase == NULL) {
+	hmImageBase = s_apier.GetModuleHandleW(NULL);
+	if (hmImageBase == NULL) {
 		LOGGER_MESSAGE("GetModuleHandleW failed");
 		return -1;
 	}
 
-	pReloc = (PIMAGE_BASE_RELOCATION)((DWORD)dwImageBase + g_globalVar.dwRelocationRva);
+	pReloc = (PIMAGE_BASE_RELOCATION)((char *)hmImageBase + g_globalVar.dwRelocationRva);
 	while (pReloc->VirtualAddress)
 	{
 		PTYPEOFFSET pTypeOffset = (PTYPEOFFSET)(pReloc + 1);
@@ -692,12 +767,18 @@ int fixRelocation()
 				break;
 			}
 			DWORD dwRVA = pTypeOffset[i].offset + pReloc->VirtualAddress;
-			DWORD dwAddressOfReloc = *(PDWORD)(dwImageBase + dwRVA);
+			DWORD dwAddressOfReloc = *(PDWORD)((char *)hmImageBase + dwRVA);
+
+#ifdef _WIN64
+			*(PULONG64)((char *)hmImageBase + dwRVA) = (ULONG64)hmImageBase + (ULONG64)dwAddressOfReloc - (ULONG64)g_globalVar.dwOrignalImageBase;
+#else
+			*(PDWORD)((char *)hmImageBase + dwRVA) = (DWORD)hmImageBase + (DWORD)dwAddressOfReloc - (DWORD)g_globalVar.dwOrignalImageBase;
+#endif // _WIN64
 
 			//设置修复后的重定向数据
-			*(PDWORD)((DWORD)dwImageBase + dwRVA) = dwAddressOfReloc - g_globalVar.dwOrignalImageBase + dwImageBase;
+
 		}
-		pReloc = (PIMAGE_BASE_RELOCATION)((DWORD)pReloc + pReloc->SizeOfBlock);
+		pReloc = (PIMAGE_BASE_RELOCATION)((char *)pReloc + pReloc->SizeOfBlock);
 	}
 	return 0;
 }
@@ -925,11 +1006,16 @@ DWORD WINAPI ThreadFun(LPVOID pM)
 }
 
 
-static DWORD go;
-void __declspec(naked)  MyMain()
+static void * go;
+void MyMain()
 {
+#ifndef _WIN64
+	//32位下
 	__asm pushad
 	__asm pushfd
+#endif // !_WIN64
+
+
 	//解压数据
 
 	LOGGER_MESSAGE("start");
@@ -973,15 +1059,26 @@ void __declspec(naked)  MyMain()
 	LOGGER_MESSAGE("after InitTLS");
 
 	//转交控制权
-	go = g_globalVar.dwOrignalOEP + s_apier.ImageBase;
+#ifdef _WIN64
+	go = (void *)((ULONG64)g_globalVar.dwOrignalOEP + (ULONG64)s_apier.ImageBase);
+#else
+	go = (void *)((DWORD)g_globalVar.dwOrignalOEP + (DWORD)s_apier.ImageBase);
+#endif // _WIN64_
+
 
 	LOGGER_MESSAGE("end");
+
+#ifdef _WIN64
+	JmpFunc(go);
+#else
 	__asm popfd;
 	__asm popad;
 	__asm jmp go;
+#endif // _WIN64
 
 failed:
 	s_apier.MessageBoxW(NULL, L"Error happend", APP_NAME_W, 0);
 	s_apier.ExitProcess(-1);
 
 }
+

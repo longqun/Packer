@@ -515,8 +515,7 @@ BOOL CPictureEx::Load(LPCTSTR szFileName)
 	
 	CFile file;
 	HGLOBAL hGlobal;
-	DWORD dwSize;
-
+	ULONGLONG file_size;
 	if (!file.Open(szFileName,
 				CFile::modeRead | 
 				CFile::shareDenyWrite) )
@@ -525,8 +524,8 @@ BOOL CPictureEx::Load(LPCTSTR szFileName)
 		return FALSE;
 	};
 
-	dwSize = file.GetLength();
-	hGlobal = GlobalAlloc(GMEM_MOVEABLE | GMEM_NODISCARD,dwSize);
+	file_size = file.GetLength();
+	hGlobal = GlobalAlloc(GMEM_MOVEABLE | GMEM_NODISCARD, file_size);
 	if (!hGlobal)
 	{
 		TRACE(_T("Load (file): Error allocating memory\n"));
@@ -543,7 +542,7 @@ BOOL CPictureEx::Load(LPCTSTR szFileName)
 
 	TRY
 	{
-		file.Read(pData,dwSize);
+		file.Read(pData,file_size);
 	}
 	CATCH(CFileException, e);                                          
 	{
@@ -558,7 +557,7 @@ BOOL CPictureEx::Load(LPCTSTR szFileName)
 	GlobalUnlock(hGlobal);
 	file.Close();
 
-	BOOL bRetValue = Load(hGlobal,dwSize);
+	BOOL bRetValue = Load(hGlobal, file_size);
 	GlobalFree(hGlobal);
 	return bRetValue;
 }

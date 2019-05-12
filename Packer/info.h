@@ -3,7 +3,7 @@
 #include "stdio.h"
 #include "string"
 #define GET_DOS_HEADER(x) ((PIMAGE_DOS_HEADER)(x))
-#define GET_NT_HEADER(x) ((PIMAGE_NT_HEADERS)((DWORD)GET_DOS_HEADER(x)->e_lfanew + (DWORD)(x)))
+#define GET_NT_HEADER(x) ((PIMAGE_NT_HEADERS)(GET_DOS_HEADER(x)->e_lfanew + (char *)(x)))
 #define GET_SECTION_HEADER(x) IMAGE_FIRST_SECTION(x)
 
 struct FileMapStruct
@@ -16,7 +16,7 @@ public:
 		length = 0;
 	}
 public:
-	DWORD length;
+	int64_t length;
 	char* m_lpFileData;
 	FILE* m_hFile;
 };
